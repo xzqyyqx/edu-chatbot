@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>管理后台 · AI智能客服系统</title>
+  <style>
+    :root {
+      --primary: #6366f1; --primary-light: #818cf8; --primary-dark: #4f46e5;
+      --success: #10b981; --danger: #ef4444; --warning: #f59e0b;
+      --bg: #f1f5f9; --bg-card: #fff; --bg-sidebar: #0f172a;
+      --text: #1e293b; --text2: #64748b; --text3: #94a3b8;
+      --border: #e2e8f0; --radius: 10px;
+      --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: var(--font); background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; display: flex; }
+
+    /* 侧边栏 */
+    .sidebar { width: 240px; background: var(--bg-sidebar); display: flex; flex-direction: column; flex-shrink: 0; }
+    .sidebar-header { padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .sidebar-header h1 { color: #fff; font-size: 15px; font-weight: 700; }
+    .sidebar-header p { color: rgba(255,255,255,0.4); font-size: 11px; margin-top: 4px; }
+    .sidebar-nav { padding: 12px; flex: 1; overflow-y: auto; }
+    .nav-group { margin-bottom: 6px; }
+    .nav-group-title { font-size: 10px; color: rgba(255,255,255,0.25); text-transform: uppercase; letter-spacing: 0.8px; padding: 10px 10px 4px; }
+    .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 8px; cursor: pointer; color: rgba(255,255,255,0.55); font-size: 13px; font-weight: 500; transition: all 0.15s; }
+    .nav-item:hover { background: rgba(255,255,255,0.06); color: #fff; }
+    .nav-item.active { background: rgba(99,102,241,0.25); color: #fff; }
+    .nav-item .icon { font-size: 15px; width: 20px; text-align: center; }
+    .sidebar-footer { padding: 16px; border-top: 1px solid rgba(255,255,255,0.06); }
+    .logout-btn { width: 100%; padding: 8px; background: rgba(239,68,68,0.15); color: #fca5a5; border: none; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 500; transition: all 0.15s; }
+    .logout-btn:hover { background: rgba(239,68,68,0.3); }
+
+    /* 主内容 */
+    .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .topbar { height: 56px; background: #fff; border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 24px; flex-shrink: 0; }
+    .topbar h2 { font-size: 16px; font-weight: 700; }
+    .topbar .breadcrumb { font-size: 12px; color: var(--text3); margin-left: 12px; }
+    .topbar .right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+    .topbar .user-info { font-size: 13px; color: var(--text2); }
+    .content { flex: 1; overflow-y: auto; padding: 24px; }
+
+    /* 卡片 */
+    .card { background: #fff; border-radius: var(--radius); border: 1px solid var(--border); margin-bottom: 20px; }
+    .card-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+    .card-header h3 { font-size: 15px; font-weight: 700; }
+    .card-body { padding: 20px; }
+    .card-body.no-pad { padding: 0; }
+
+    /* 统计卡片 */
+    .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .stat-card { background: #fff; border-radius: var(--radius); border: 1px solid var(--border); padding: 20px; display: flex; align-items: center; gap: 16px; }
+    .stat-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; }
+    .stat-icon.blue { background: #eff6ff; }
+    .stat-icon.green { background: #f0fdf4; }
+    .stat-icon.orange { background: #fff7ed; }
+    .stat-icon.purple { background: #faf5ff; }
+    .stat-value { font-size: 24px; font-weight: 800; }
+    .stat-label { font-size: 12px; color: var(--text3); margin-top: 2px; }
+
+    /* 表格 */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { background: var(--bg); padding: 10px 14px; text-align: left; font-weight: 600; color: var(--text2); font-size: 12px; white-space: nowrap; border-bottom: 1px solid var(--border); }
+    td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    tr:hover td { background: #fafbfc; }
+
+    /* 按钮 */
+    .btn { padding: 7px 16px; border-radius: 7px; font-size: 13px; font-weight: 500; cursor: pointer; border: 1px solid transparent; transition: all 0.15s; display: inline-flex; align-items: center; gap: 5px; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-success { background: var(--success); color: #fff; }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-danger:hover { background: #dc2626; }
+    .btn-outline { background: #fff; color: var(--text2); border-color: var(--border); }
+    .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+    .btn-sm { padding: 4px 10px; font-size: 12px; }
+    .btn-xs { padding: 3px 8px; font-size: 11px; border-radius: 5px; }
+
+    /* 标签 */
+    .badge { padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; display: inline-block; }
+    .badge-blue { background: #eff6ff; color: #1d4ed8; }
+    .badge-green { background: #f0fdf4; color: #166534; }
+    .badge-orange { background: #fff7ed; color: #9a3412; }
+    .badge-red { background: #fef2f2; color: #dc2626; }
+    .badge-gray { background: #f8fafc; color: #475569; }
+    .badge-purple { background: #faf5ff; color: #7e22ce; }
+
+    /* 表单 */
+    .form-group { margin-bottom: 14px; }
+    .form-label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px; color: var(--text); }
+    .form-control { width: 100%; padding: 8px 12px; border: 1.5px solid var(--border); border-radius: 7px; font-size: 14px; font-family: var(--font); outline: none; transition: border-color 0.15s; color: var(--text); }
+    .form-control:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(99,102,241,0.08); }
+    textarea.form-control { min-height: 80px; resize: vertical; line-height: 1.5; }
+    select.form-control { cursor: pointer; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .form-help { font-size: 11px; color: var(--text3); margin-top: 3px; }
+
+    /* 模态框 */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: none; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(4px); }
+    .modal-overlay.open { display: flex; }
+    .modal { background: #fff; border-radius: 14px; padding: 24px; width: 560px; max-width: 92vw; max-height: 85vh; overflow-y: auto; animation: modalIn 0.2s ease; }
+    @keyframes modalIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+    .modal h3 { font-size: 17px; font-weight: 700; margin-bottom: 16px; }
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }
+
+    /* 登录页 */
+    .login-page { width: 100%; height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #0f172a, #1e1b4b); }
+    .login-box { background: #fff; border-radius: 16px; padding: 40px; width: 380px; text-align: center; }
+    .login-box h1 { font-size: 20px; margin-bottom: 6px; }
+    .login-box p { font-size: 13px; color: var(--text3); margin-bottom: 28px; }
+    .login-box .form-group { text-align: left; }
+
+    /* Toast */
+    .toast-container { position: fixed; top: 16px; right: 16px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
+    .toast { padding: 10px 16px; background: #fff; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.12); font-size: 13px; font-weight: 500; border-left: 4px solid var(--primary); animation: slideIn 0.25s ease; }
+    .toast.success { border-left-color: var(--success); }
+    .toast.error { border-left-color: var(--danger); }
+    @keyframes slideIn { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: translateX(0); } }
+
+    /* 空状态 */
+    .empty { text-align: center; padding: 48px 20px; color: var(--text3); }
+    .empty .icon { font-size: 40px; margin-bottom: 8px; }
+
+    /* 标签页 */
+    .tabs { display: flex; gap: 4px; background: var(--bg); border-radius: 8px; padding: 4px; width: fit-content; margin-bottom: 16px; }
+    .tab { padding: 6px 16px; border: none; background: transparent; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; color: var(--text2); transition: all 0.15s; }
+    .tab.active { background: #fff; color: var(--primary); box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+
+    /* 对话气泡 */
+    .chat-bubble { padding: 8px 14px; border-radius: 12px; font-size: 13px; line-height: 1.6; max-width: 80%; margin-bottom: 8px; word-break: break-word; }
+    .chat-bubble.user { background: var(--primary); color: #fff; margin-left: auto; border-bottom-right-radius: 3px; }
+    .chat-bubble.assistant { background: #f1f5f9; border-bottom-left-radius: 3px; }
+    .chat-bubble.system { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; font-size: 12px; }
+    .chat-bubble .time { font-size: 10px; opacity: 0.6; margin-top: 3px; }
+
+    /* 高亮标签 */
+    .tags { display: flex; flex-wrap: wrap; gap: 4px; }
+    .tag { padding: 2px 8px; background: rgba(99,102,241,0.08); color: var(--primary); border-radius: 12px; font-size: 11px; font-weight: 500; }
+    .tag-remove { cursor: pointer; margin-left: 3px; opacity: 0.6; }
+    .tag-remove:hover { opacity: 1; }
+
+    /* 确认对话框 */
+    .confirm-text { font-size: 14px; color: var(--text2); line-height: 1.6; margin-bottom: 8px; }
+  </style>
+</head>
+<body>
+
+<!-- 登录页 -->
+<div class="login-page" id="loginPage">
+  <div class="login-box">
+    <div style="font-size:40px;margin-bottom:12px">🔐</div>
+    <h1>管理后台</h1>
+    <p>AI智能客服系统 · 管理员登录</p>
+    <div class="form-group">
+      <label class="form-label">用户名</label>
+      <input class="form-control" id="loginUser" type="text" placeholder="请输入用户名">
+    </div>
+    <div class="form-group">
+      <label class="form-label">密码</label>
+      <input class="form-control" id="loginPass" type="password" placeholder="请输入密码">
+    </div>
+    <button class="btn btn-primary" style="width:100%;padding:10px;margin-top:8px" onclick="doLogin()">登 录</button>
+  </div>
+</div>
+
+<!-- 管理主界面 -->
+<div style="display:none;width:100%;height:100vh" id="adminApp">
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <h1>🛡️ 管理后台</h1>
+      <p>AI智能客服系统</p>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-group">
+        <div class="nav-group-title">概览</div>
+        <div class="nav-item active" onclick="nav('dashboard')"><span class="icon">📊</span> 数据概览</div>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-title">知识库管理</div>
+        <div class="nav-item" onclick="nav('courses')"><span class="icon">🎓</span> 课程管理</div>
+        <div class="nav-item" onclick="nav('classes')"><span class="icon">📋</span> 班型管理</div>
+        <div class="nav-item" onclick="nav('issues')"><span class="icon">🔧</span> 故障问题</div>
+        <div class="nav-item" onclick="nav('policies')"><span class="icon">💰</span> 退费政策</div>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-title">运营管理</div>
+        <div class="nav-item" onclick="nav('sessions')"><span class="icon">💬</span> 对话记录</div>
+        <div class="nav-item" onclick="nav('tickets')"><span class="icon">🎫</span> 工单处理</div>
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="logout-btn" onclick="doLogout()">退出登录</button>
+    </div>
+  </aside>
+  <div class="main">
+    <div class="topbar">
+      <h2 id="pageTitle">数据概览</h2>
+      <span class="breadcrumb" id="pageBread">首页</span>
+      <div class="right">
+        <span class="user-info">👤 管理员</span>
+        <a href="/" style="font-size:12px;color:var(--primary)">← 返回用户端</a>
+      </div>
+    </div>
+    <div class="content" id="pageContent"></div>
+  </div>
+</div>
+
+<!-- 模态框容器 -->
+<div class="modal-overlay" id="modal"><div class="modal" id="modalBody"></div></div>
+<!-- 确认框 -->
+<div class="modal-overlay" id="confirmModal"><div class="modal" style="width:400px" id="confirmBody"></div></div>
+<!-- Toast -->
+<div class="toast-container" id="toastBox"></div>
+
+<script>
+const API = window.location.origin + '/api/admin';
+let TOKEN = localStorage.getItem('admin_token') || '';
+let currentPage = 'dashboard';
+
+// ===== 通用 =====
+async function api(path, opts = {}) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (TOKEN) headers['Authorization'] = 'Bearer ' + TOKEN;
+  try {
+    const res = await fetch(API + path, { ...opts, headers: { ...headers, ...(opts.headers || {}) } });
+    const data = await res.json();
+    if (res.status === 401) { doLogout(); return null; }
+    return data;
+  } catch (e) { toast('网络请求失败', 'error'); return null; }
+}
+
+function toast(msg, type = '') {
+  const box = document.getElementById('toastBox');
+  const el = document.createElement('div');
+  el.className = 'toast ' + type;
+  el.textContent = msg;
+  box.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+function showModal(html) { document.getElementById('modalBody').innerHTML = html; document.getElementById('modal').classList.add('open'); }
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+
+function showConfirm(msg, onOk) {
+  document.getElementById('confirmBody').innerHTML = `
+    <h3>⚠️ 确认操作</h3>
+    <p class="confirm-text">${msg}</p>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="document.getElementById('confirmModal').classList.remove('open')">取消</button>
+      <button class="btn btn-danger" id="confirmOkBtn">确认删除</button>
+    </div>
+  `;
+  document.getElementById('confirmModal').classList.add('open');
+  document.getElementById('confirmOkBtn').onclick = () => { document.getElementById('confirmModal').classList.remove('open'); onOk(); };
+}
+
+function fmtDate(d) { return d ? new Date(d).toLocaleString('zh-CN') : '-'; }
+function fmtShortId(id) { return id ? id.slice(0, 8).toUpperCase() : '-'; }
+
+// ===== 登录 =====
+async function doLogin() {
+  const username = document.getElementById('loginUser').value;
+  const password = document.getElementById('loginPass').value;
+  const data = await api('/login', { method: 'POST', body: JSON.stringify({ username, password }) });
+  if (data?.success) {
+    TOKEN = data.token;
+    localStorage.setItem('admin_token', TOKEN);
+    document.getElementById('loginPage').style.display = 'none';
+    document.getElementById('adminApp').style.display = 'flex';
+    nav('dashboard');
+  } else {
+    toast(data?.error || '登录失败', 'error');
+  }
+}
+
+function doLogout() {
+  TOKEN = '';
+  localStorage.removeItem('admin_token');
+  document.getElementById('loginPage').style.display = 'flex';
+  document.getElementById('adminApp').style.display = 'none';
+}
+
+// 自动登录
+(async () => {
+  if (TOKEN) {
+    const data = await api('/dashboard');
+    if (data?.success) {
+      document.getElementById('loginPage').style.display = 'none';
+      document.getElementById('adminApp').style.display = 'flex';
+      nav('dashboard');
+    }
+  }
+})();
+
+// ===== 导航 =====
+function nav(page) {
+  currentPage = page;
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  const items = document.querySelectorAll('.nav-item');
+  const map = ['dashboard','courses','classes','issues','policies','sessions','tickets'];
+  const idx = map.indexOf(page);
+  if (idx >= 0 && items[idx]) items[idx].classList.add('active');
+
+  const titles = { dashboard:'数据概览', courses:'课程管理', classes:'班型管理', issues:'故障问题管理', policies:'退费政策管理', sessions:'对话记录', tickets:'工单处理' };
+  document.getElementById('pageTitle').textContent = titles[page] || page;
+  document.getElementById('pageBread').textContent = '首页 / ' + (titles[page] || page);
+
+  const loaders = { dashboard: loadDashboard, courses: loadCourses, classes: loadClasses, issues: loadIssues, policies: loadPolicies, sessions: loadSessions, tickets: loadTickets };
+  if (loaders[page]) loaders[page]();
+}
+
+// ===== 仪表盘 =====
+async function loadDashboard() {
+  const data = await api('/dashboard');
+  if (!data?.success) return;
+  const d = data.data;
+  document.getElementById('pageContent').innerHTML = `
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-icon blue">💬</div><div><div class="stat-value">${d.totalSessions}</div><div class="stat-label">总会话数</div></div></div>
+      <div class="stat-card"><div class="stat-icon green">📝</div><div><div class="stat-value">${d.totalMessages}</div><div class="stat-label">用户消息</div></div></div>
+      <div class="stat-card"><div class="stat-icon orange">🎫</div><div><div class="stat-value">${d.totalTickets}</div><div class="stat-label">工单总数</div></div></div>
+      <div class="stat-card"><div class="stat-icon purple">⚠️</div><div><div class="stat-value">${d.openTickets}</div><div class="stat-label">待处理工单</div></div></div>
+      <div class="stat-card"><div class="stat-icon blue">🎓</div><div><div class="stat-value">${d.totalCourses}</div><div class="stat-label">在线课程</div></div></div>
+      <div class="stat-card"><div class="stat-icon green">🔧</div><div><div class="stat-value">${d.totalIssues}</div><div class="stat-label">故障知识条目</div></div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+      <div class="card">
+        <div class="card-header"><h3>📈 近7天会话趋势</h3></div>
+        <div class="card-body">${renderBarChart(d.recentSessions || [])}</div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>📊 工单类型分布</h3></div>
+        <div class="card-body">${renderTypeChart(d.ticketByType || [])}</div>
+      </div>
+    </div>
+  `;
+}
+
+function renderBarChart(data) {
+  if (!data.length) return '<div class="empty"><div class="icon">📉</div><p>暂无数据</p></div>';
+  const max = Math.max(...data.map(d => d.count), 1);
+  return `<div style="display:flex;align-items:flex-end;gap:8px;height:160px;padding-top:10px">
+    ${data.map(d => `<div style="flex:1;text-align:center">
+      <div style="font-size:12px;font-weight:700;color:var(--primary)">${d.count}</div>
+      <div style="background:linear-gradient(180deg,var(--primary),var(--primary-light));height:${(d.count/max)*120}px;border-radius:4px 4px 0 0;margin:4px 0;min-height:4px"></div>
+      <div style="font-size:10px;color:var(--text3)">${d.date?.slice(5) || ''}</div>
+    </div>`).join('')}
+  </div>`;
+}
+
+function renderTypeChart(data) {
+  if (!data.length) return '<div class="empty"><div class="icon">📊</div><p>暂无数据</p></div>';
+  const total = data.reduce((s, d) => s + d.count, 0) || 1;
+  const names = { refund: '退费', device: '技术故障', complaint: '投诉', other: '其他' };
+  const colors = { refund: '#f59e0b', device: '#10b981', complaint: '#ef4444', other: '#6366f1' };
+  return `<div style="display:flex;flex-direction:column;gap:12px">
+    ${data.map(d => `<div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+        <span style="font-size:13px;font-weight:600">${names[d.type] || d.type}</span>
+        <span style="font-size:13px;color:var(--text2)">${d.count} 条 (${Math.round(d.count/total*100)}%)</span>
+      </div>
+      <div style="background:#f1f5f9;border-radius:4px;height:8px;overflow:hidden">
+        <div style="background:${colors[d.type] || 'var(--primary)'};height:100%;width:${d.count/total*100}%;border-radius:4px;transition:width 0.3s"></div>
+      </div>
+    </div>`).join('')}
+  </div>`;
+}
+
+// ===== 课程管理 =====
+async function loadCourses() {
+  const data = await api('/courses');
+  if (!data?.success) return;
+  const courses = data.courses || [];
+  const catMap = { programming: '编程', design: '设计', operation: '运营', finance: '金融' };
+  document.getElementById('pageContent').innerHTML = `
+    <div style="margin-bottom:16px"><button class="btn btn-primary" onclick="editCourse()">+ 新增课程</button></div>
+    <div class="card"><div class="card-body no-pad"><div class="table-wrap"><table>
+      <thead><tr><th>图标</th><th>课程名称</th><th>分类</th><th>时长</th><th>难度</th><th>亮点</th><th>班型数</th><th>状态</th><th>操作</th></tr></thead>
+      <tbody>${courses.map(c => {
+        const hl = JSON.parse(c.highlights || '[]');
+        return `<tr>
+          <td style="font-size:24px">${c.cover_emoji || '📚'}</td>
+          <td><strong>${c.name}</strong><br><span style="font-size:11px;color:var(--text3)">${c.id}</span></td>
+          <td><span class="badge badge-blue">${catMap[c.category] || c.category}</span></td>
+          <td>${c.duration}</td>
+          <td><span class="badge ${c.level==='intermediate'?'badge-orange':'badge-green'}">${c.level==='intermediate'?'进阶':'入门'}</span></td>
+          <td><div class="tags">${hl.slice(0,3).map(h=>`<span class="tag">${h}</span>`).join('')}${hl.length>3?`<span class="tag">+${hl.length-3}</span>`:''}</div></td>
+          <td>${(c.classes||[]).length}</td>
+          <td>${c.is_active ? '<span class="badge badge-green">启用</span>' : '<span class="badge badge-gray">停用</span>'}</td>
+          <td>
+            <button class="btn btn-outline btn-xs" onclick="editCourse('${c.id}')">编辑</button>
+            <button class="btn btn-outline btn-xs" style="color:var(--danger);border-color:var(--danger)" onclick="delCourse('${c.id}','${c.name}')">删除</button>
+          </td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table></div></div></div>
+  `;
+}
+
+function editCourse(id) {
+  if (id) {
+    // 从当前表格数据中找到课程 — 需要重新请求
+    api(`/courses`).then(data => {
+      if (!data?.success) return;
+      const c = data.courses.find(x => x.id === id);
+      if (!c) return;
+      showCourseForm(c);
+    });
+  } else {
+    showCourseForm({});
+  }
+}
+
+function showCourseForm(c) {
+  const hl = JSON.parse(c.highlights || '[]');
+  showModal(`
+    <h3>${c.id ? '编辑课程' : '新增课程'}</h3>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">课程名称 *</label><input class="form-control" id="f_name" value="${c.name||''}"></div>
+      <div class="form-group"><label class="form-label">分类 *</label><select class="form-control" id="f_category">
+        <option value="programming" ${c.category==='programming'?'selected':''}>编程</option>
+        <option value="design" ${c.category==='design'?'selected':''}>设计</option>
+        <option value="operation" ${c.category==='operation'?'selected':''}>运营</option>
+        <option value="finance" ${c.category==='finance'?'selected':''}>金融</option>
+      </select></div>
+    </div>
+    <div class="form-group"><label class="form-label">课程描述</label><textarea class="form-control" id="f_desc">${c.description||''}</textarea></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">课程时长</label><input class="form-control" id="f_duration" value="${c.duration||''}" placeholder="如：6个月"></div>
+      <div class="form-group"><label class="form-label">难度</label><select class="form-control" id="f_level">
+        <option value="beginner" ${c.level==='beginner'?'selected':''}>入门</option>
+        <option value="intermediate" ${c.level==='intermediate'?'selected':''}>进阶</option>
+      </select></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">图标 Emoji</label><input class="form-control" id="f_emoji" value="${c.cover_emoji||'📚'}"></div>
+      <div class="form-group"><label class="form-label">状态</label><select class="form-control" id="f_active">
+        <option value="1" ${c.is_active!==0?'selected':''}>启用</option>
+        <option value="0" ${c.is_active===0?'selected':''}>停用</option>
+      </select></div>
+    </div>
+    <div class="form-group"><label class="form-label">课程亮点（每行一个）</label><textarea class="form-control" id="f_highlights" rows="4">${hl.join('\n')}</textarea></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal()">取消</button>
+      <button class="btn btn-primary" onclick="saveCourse('${c.id||''}')">保存</button>
+    </div>
+  `);
+}
+
+async function saveCourse(id) {
+  const body = {
+    name: document.getElementById('f_name').value,
+    category: document.getElementById('f_category').value,
+    description: document.getElementById('f_desc').value,
+    duration: document.getElementById('f_duration').value,
+    level: document.getElementById('f_level').value,
+    cover_emoji: document.getElementById('f_emoji').value,
+    is_active: parseInt(document.getElementById('f_active').value),
+    highlights: document.getElementById('f_highlights').value.split('\n').filter(s => s.trim())
+  };
+  if (!body.name) { toast('请填写课程名称', 'error'); return; }
+
+  const data = id ? await api(`/courses/${id}`, { method: 'PUT', body: JSON.stringify(body) }) : await api('/courses', { method: 'POST', body: JSON.stringify(body) });
+  if (data?.success) { toast('保存成功', 'success'); closeModal(); loadCourses(); }
+  else toast(data?.error || '保存失败', 'error');
+}
+
+function delCourse(id, name) {
+  showConfirm(`确定删除课程「${name}」？相关班型也会一并删除。`, async () => {
+    const data = await api(`/courses/${id}`, { method: 'DELETE' });
+    if (data?.success) { toast('已删除', 'success'); loadCourses(); }
+    else toast(data?.error || '删除失败', 'error');
+  });
+}
+
+// ===== 班型管理 =====
+async function loadClasses() {
+  const [classesData, coursesData] = await Promise.all([api('/classes'), api('/courses')]);
+  if (!classesData?.success) return;
+  const classes = classesData.classes || [];
+  const courses = coursesData?.courses || [];
+  document.getElementById('pageContent').innerHTML = `
+    <div style="margin-bottom:16px"><button class="btn btn-primary" onclick="editClass()">+ 新增班型</button></div>
+    <div class="card"><div class="card-body no-pad"><div class="table-wrap"><table>
+      <thead><tr><th>班型名称</th><th>所属课程</th><th>现价</th><th>原价</th><th>时长</th><th>特色</th><th>状态</th><th>操作</th></tr></thead>
+      <tbody>${classes.map(c => {
+        const ft = JSON.parse(c.features || '[]');
+        return `<tr>
+          <td><strong>${c.name}</strong><br><span style="font-size:11px;color:var(--text3)">${c.id}</span></td>
+          <td>${c.course_name || c.course_id}</td>
+          <td style="font-weight:700;color:var(--primary)">¥${c.price?.toLocaleString()}</td>
+          <td style="color:var(--text3);text-decoration:line-through">¥${c.original_price?.toLocaleString()}</td>
+          <td>${c.duration}</td>
+          <td><div class="tags">${ft.slice(0,2).map(f=>`<span class="tag">${f}</span>`).join('')}${ft.length>2?`<span class="tag">+${ft.length-2}</span>`:''}</div></td>
+          <td>${c.is_active ? '<span class="badge badge-green">启用</span>' : '<span class="badge badge-gray">停用</span>'}</td>
+          <td>
+            <button class="btn btn-outline btn-xs" onclick="editClass('${c.id}')">编辑</button>
+            <button class="btn btn-outline btn-xs" style="color:var(--danger);border-color:var(--danger)" onclick="delClass('${c.id}','${c.name}')">删除</button>
+          </td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table></div></div></div>
+  `;
+  // 缓存课程列表给编辑用
+  window._courses = courses;
+}
+
+function editClass(id) {
+  if (id) {
+    api('/classes').then(data => {
+      if (!data?.success) return;
+      const c = data.classes.find(x => x.id === id);
+      if (c) showClassForm(c);
+    });
+  } else {
+    showClassForm({});
+  }
+}
+
+function showClassForm(c) {
+  const courses = window._courses || [];
+  const ft = JSON.parse(c.features || '[]');
+  showModal(`
+    <h3>${c.id ? '编辑班型' : '新增班型'}</h3>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">班型名称 *</label><input class="form-control" id="f_name" value="${c.name||''}"></div>
+      <div class="form-group"><label class="form-label">所属课程 *</label><select class="form-control" id="f_course_id">
+        <option value="">请选择课程</option>
+        ${courses.map(co => `<option value="${co.id}" ${c.course_id===co.id?'selected':''}>${co.name}</option>`).join('')}
+      </select></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">现价 *</label><input class="form-control" id="f_price" type="number" value="${c.price||''}"></div>
+      <div class="form-group"><label class="form-label">原价</label><input class="form-control" id="f_oprice" type="number" value="${c.original_price||''}"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">时长</label><input class="form-control" id="f_duration" value="${c.duration||''}"></div>
+      <div class="form-group"><label class="form-label">状态</label><select class="form-control" id="f_active">
+        <option value="1" ${c.is_active!==0?'selected':''}>启用</option>
+        <option value="0" ${c.is_active===0?'selected':''}>停用</option>
+      </select></div>
+    </div>
+    <div class="form-group"><label class="form-label">班型特色（每行一个）</label><textarea class="form-control" id="f_features" rows="4">${ft.join('\n')}</textarea></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal()">取消</button>
+      <button class="btn btn-primary" onclick="saveClass('${c.id||''}')">保存</button>
+    </div>
+  `);
+}
+
+async function saveClass(id) {
+  const body = {
+    name: document.getElementById('f_name').value,
+    course_id: document.getElementById('f_course_id').value,
+    price: parseFloat(document.getElementById('f_price').value),
+    original_price: parseFloat(document.getElementById('f_oprice').value) || undefined,
+    duration: document.getElementById('f_duration').value,
+    is_active: parseInt(document.getElementById('f_active').value),
+    features: document.getElementById('f_features').value.split('\n').filter(s => s.trim())
+  };
+  if (!body.name || !body.course_id || isNaN(body.price)) { toast('请填写必填项', 'error'); return; }
+
+  const data = id ? await api(`/classes/${id}`, { method: 'PUT', body: JSON.stringify(body) }) : await api('/classes', { method: 'POST', body: JSON.stringify(body) });
+  if (data?.success) { toast('保存成功', 'success'); closeModal(); loadClasses(); }
+  else toast(data?.error || '保存失败', 'error');
+}
+
+function delClass(id, name) {
+  showConfirm(`确定删除班型「${name}」？`, async () => {
+    const data = await api(`/classes/${id}`, { method: 'DELETE' });
+    if (data?.success) { toast('已删除', 'success'); loadClasses(); }
+    else toast(data?.error || '删除失败', 'error');
+  });
+}
+
+// ===== 故障问题管理 =====
+async function loadIssues() {
+  const data = await api('/device-issues');
+  if (!data?.success) return;
+  const issues = data.issues || [];
+  const catMap = { login: '登录', software: '软件', network: '网络', other: '其他' };
+  const catCls = { login: 'badge-blue', software: 'badge-green', network: 'badge-orange', other: 'badge-gray' };
+  document.getElementById('pageContent').innerHTML = `
+    <div style="margin-bottom:16px"><button class="btn btn-primary" onclick="editIssue()">+ 新增故障问题</button></div>
+    <div class="card"><div class="card-body no-pad"><div class="table-wrap"><table>
+      <thead><tr><th>问题标题</th><th>分类</th><th>关键词</th><th>问题描述</th><th>解决方案</th><th>操作</th></tr></thead>
+      <tbody>${issues.map(i => {
+        const kw = JSON.parse(i.keywords || '[]');
+        return `<tr>
+          <td><strong>${i.title}</strong></td>
+          <td><span class="badge ${catCls[i.category]||'badge-gray'}">${catMap[i.category]||i.category}</span></td>
+          <td><div class="tags">${kw.map(k=>`<span class="tag">${k}</span>`).join('')}</div></td>
+          <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${i.problem}">${i.problem}</td>
+          <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${i.solution}">${i.solution.substring(0,50)}...</td>
+          <td>
+            <button class="btn btn-outline btn-xs" onclick="editIssue('${i.id}')">编辑</button>
+            <button class="btn btn-outline btn-xs" style="color:var(--danger);border-color:var(--danger)" onclick="delIssue('${i.id}','${i.title}')">删除</button>
+          </td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table></div></div></div>
+  `;
+}
+
+function editIssue(id) {
+  if (id) {
+    api('/device-issues').then(data => {
+      if (!data?.success) return;
+      const i = data.issues.find(x => x.id === id);
+      if (i) showIssueForm(i);
+    });
+  } else { showIssueForm({}); }
+}
+
+function showIssueForm(i) {
+  const kw = JSON.parse(i.keywords || '[]');
+  showModal(`
+    <h3>${i.id ? '编辑故障问题' : '新增故障问题'}</h3>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">问题标题 *</label><input class="form-control" id="f_title" value="${i.title||''}"></div>
+      <div class="form-group"><label class="form-label">分类</label><select class="form-control" id="f_cat">
+        <option value="login" ${i.category==='login'?'selected':''}>登录</option>
+        <option value="software" ${i.category==='software'?'selected':''}>软件</option>
+        <option value="network" ${i.category==='network'?'selected':''}>网络</option>
+        <option value="other" ${i.category==='other'||!i.category?'selected':''}>其他</option>
+      </select></div>
+    </div>
+    <div class="form-group"><label class="form-label">关键词（每行一个，影响匹配命中率）</label><textarea class="form-control" id="f_kw" rows="3">${kw.join('\n')}</textarea><div class="form-help">用户消息包含这些关键词时，此解答会被检索到</div></div>
+    <div class="form-group"><label class="form-label">问题描述 *</label><input class="form-control" id="f_problem" value="${i.problem||''}"></div>
+    <div class="form-group"><label class="form-label">解决方案 *</label><textarea class="form-control" id="f_solution" rows="6">${i.solution||''}</textarea></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal()">取消</button>
+      <button class="btn btn-primary" onclick="saveIssue('${i.id||''}')">保存</button>
+    </div>
+  `);
+}
+
+async function saveIssue(id) {
+  const body = {
+    title: document.getElementById('f_title').value,
+    category: document.getElementById('f_cat').value,
+    keywords: document.getElementById('f_kw').value.split('\n').filter(s => s.trim()),
+    problem: document.getElementById('f_problem').value,
+    solution: document.getElementById('f_solution').value
+  };
+  if (!body.title || !body.problem || !body.solution) { toast('请填写必填项', 'error'); return; }
+
+  const data = id ? await api(`/device-issues/${id}`, { method: 'PUT', body: JSON.stringify(body) }) : await api('/device-issues', { method: 'POST', body: JSON.stringify(body) });
+  if (data?.success) { toast('保存成功', 'success'); closeModal(); loadIssues(); }
+  else toast(data?.error || '保存失败', 'error');
+}
+
+function delIssue(id, title) {
+  showConfirm(`确定删除故障问题「${title}」？`, async () => {
+    const data = await api(`/device-issues/${id}`, { method: 'DELETE' });
+    if (data?.success) { toast('已删除', 'success'); loadIssues(); }
+    else toast(data?.error || '删除失败', 'error');
+  });
+}
+
+// ===== 退费政策管理 =====
+async function loadPolicies() {
+  const data = await api('/refund-policies');
+  if (!data?.success) return;
+  const policies = data.policies || [];
+  document.getElementById('pageContent').innerHTML = `
+    <div style="margin-bottom:16px"><button class="btn btn-primary" onclick="editPolicy()">+ 新增退费政策</button></div>
+    <div class="card"><div class="card-body no-pad"><div class="table-wrap"><table>
+      <thead><tr><th>排序</th><th>政策标题</th><th>适用条件</th><th>政策内容</th><th>处理天数</th><th>状态</th><th>操作</th></tr></thead>
+      <tbody>${policies.map(p => `<tr>
+        <td>${p.sort_order}</td>
+        <td><strong>${p.title}</strong></td>
+        <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.condition}</td>
+        <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.policy.substring(0,60)}...</td>
+        <td>${p.processing_days}天</td>
+        <td>${p.is_active ? '<span class="badge badge-green">启用</span>' : '<span class="badge badge-gray">停用</span>'}</td>
+        <td>
+          <button class="btn btn-outline btn-xs" onclick="editPolicy('${p.id}')">编辑</button>
+          <button class="btn btn-outline btn-xs" style="color:var(--danger);border-color:var(--danger)" onclick="delPolicy('${p.id}','${p.title}')">删除</button>
+        </td>
+      </tr>`).join('')}</tbody>
+    </table></div></div></div>
+  `;
+}
+
+function editPolicy(id) {
+  if (id) {
+    api('/refund-policies').then(data => {
+      if (!data?.success) return;
+      const p = data.policies.find(x => x.id === id);
+      if (p) showPolicyForm(p);
+    });
+  } else { showPolicyForm({}); }
+}
+
+function showPolicyForm(p) {
+  showModal(`
+    <h3>${p.id ? '编辑退费政策' : '新增退费政策'}</h3>
+    <div class="form-group"><label class="form-label">政策标题 *</label><input class="form-control" id="f_title" value="${p.title||''}"></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">适用条件 *</label><input class="form-control" id="f_condition" value="${p.condition||''}"></div>
+      <div class="form-group"><label class="form-label">处理天数</label><input class="form-control" id="f_days" type="number" value="${p.processing_days||7}"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">排序号</label><input class="form-control" id="f_sort" type="number" value="${p.sort_order||0}"></div>
+      <div class="form-group"><label class="form-label">状态</label><select class="form-control" id="f_active">
+        <option value="1" ${p.is_active!==0?'selected':''}>启用</option>
+        <option value="0" ${p.is_active===0?'selected':''}>停用</option>
+      </select></div>
+    </div>
+    <div class="form-group"><label class="form-label">政策内容 *</label><textarea class="form-control" id="f_policy" rows="5">${p.policy||''}</textarea></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal()">取消</button>
+      <button class="btn btn-primary" onclick="savePolicy('${p.id||''}')">保存</button>
+    </div>
+  `);
+}
+
+async function savePolicy(id) {
+  const body = {
+    title: document.getElementById('f_title').value,
+    condition: document.getElementById('f_condition').value,
+    policy: document.getElementById('f_policy').value,
+    processing_days: parseInt(document.getElementById('f_days').value) || 7,
+    sort_order: parseInt(document.getElementById('f_sort').value) || 0,
+    is_active: parseInt(document.getElementById('f_active').value)
+  };
+  if (!body.title || !body.condition || !body.policy) { toast('请填写必填项', 'error'); return; }
+
+  const data = id ? await api(`/refund-policies/${id}`, { method: 'PUT', body: JSON.stringify(body) }) : await api('/refund-policies', { method: 'POST', body: JSON.stringify(body) });
+  if (data?.success) { toast('保存成功', 'success'); closeModal(); loadPolicies(); }
+  else toast(data?.error || '保存失败', 'error');
+}
+
+function delPolicy(id, title) {
+  showConfirm(`确定删除退费政策「${title}」？`, async () => {
+    const data = await api(`/refund-policies/${id}`, { method: 'DELETE' });
+    if (data?.success) { toast('已删除', 'success'); loadPolicies(); }
+    else toast(data?.error || '删除失败', 'error');
+  });
+}
+
+// ===== 对话记录 =====
+async function loadSessions() {
+  const data = await api('/sessions');
+  if (!data?.success) return;
+  const sessions = data.sessions || [];
+  document.getElementById('pageContent').innerHTML = `
+    <div class="card"><div class="card-body no-pad"><div class="table-wrap"><table>
+      <thead><tr><th>会话ID</th><th>用户类型</th><th>消息数</th><th>状态</th><th>创建时间</th><th>最近活跃</th><th>操作</th></tr></thead>
+      <tbody>${sessions.map(s => `<tr>
+        <td style="font-family:monospace;font-size:12px">${fmtShortId(s.id)}</td>
+        <td><span class="badge ${s.user_type==='enrolled'?'badge-purple':'badge-blue'}">${s.user_type==='enrolled'?'在读学员':'意向学员'}</span></td>
+        <td>${s.message_count || 0}</td>
+        <td><span class="badge ${s.status==='active'?'badge-green':'badge-gray'}">${s.status==='active'?'活跃':'归档'}</span></td>
+        <td>${fmtDate(s.created_at)}</td>
+        <td>${fmtDate(s.updated_at)}</td>
+        <td>
+          <button class="btn btn-outline btn-xs" onclick="viewSession('${s.id}')">查看对话</button>
+          <button class="btn btn-outline btn-xs" style="color:var(--danger);border-color:var(--danger)" onclick="delSession('${s.id}')">删除</button>
+        </td>
+      </tr>`).join('')}</tbody>
+    </table></div></div></div>
+  `;
+}
+
+async function viewSession(id) {
+  const data = await api(`/sessions/${id}`);
+  if (!data?.success) return;
+  const { session, messages } = data;
+  showModal(`
+    <h3>💬 对话详情</h3>
+    <div style="margin-bottom:12px;display:flex;gap:12px;flex-wrap:wrap">
+      <span class="badge badge-blue">${session.user_type==='enrolled'?'在读学员':'意向学员'}</span>
+      <span style="font-size:12px;color:var(--text3)">${fmtDate(session.created_at)}</span>
+      <span style="font-size:12px;color:var(--text3)">${messages.length} 条消息</span>
+    </div>
+    <div style="max-height:400px;overflow-y:auto;display:flex;flex-direction:column;gap:4px">
+      ${messages.map(m => `<div class="chat-bubble ${m.role}">${m.content.replace(/\n/g,'<br>')}<div class="time">${fmtDate(m.created_at)}</div></div>`).join('')}
+    </div>
+    <div class="modal-actions"><button class="btn btn-outline" onclick="closeModal()">关闭</button></div>
+  `);
+}
+
+function delSession(id) {
+  showConfirm(`确定删除此会话及所有消息？此操作不可恢复。`, async () => {
+    const data = await api(`/sessions/${id}`, { method: 'DELETE' });
+    if (data?.success) { toast('已删除', 'success'); loadSessions(); }
+    else toast(data?.error || '删除失败', 'error');
+  });
+}
+
+// ===== 工单处理 =====
+async function loadTickets() {
+  const data = await api('/tickets?limit=50');
+  if (!data?.success) return;
+  const tickets = data.tickets || [];
+  const typeMap = { refund: '💰 退费', device: '🔧 技术', complaint: '📢 投诉', other: '📌 其他' };
+  const statusMap = { open: '待处理', processing: '处理中', resolved: '已解决', closed: '已关闭' };
+  const statusCls = { open: 'badge-orange', processing: 'badge-blue', resolved: 'badge-green', closed: 'badge-gray' };
+  const priMap = { low: '低', normal: '普通', high: '高', urgent: '紧急' };
+
+  document.getElementById('pageContent').innerHTML = `
+    <div class="card"><div class="card-body no-pad"><div class="table-wrap"><table>
+      <thead><tr><th>工单号</th><th>类型</th><th>标题</th><th>优先级</th><th>状态</th><th>分配</th><th>创建时间</th><th>操作</th></tr></thead>
+      <tbody>${tickets.map(t => `<tr>
+        <td style="font-family:monospace;font-size:12px">${fmtShortId(t.id)}</td>
+        <td>${typeMap[t.type]||t.type}</td>
+        <td>${t.title}</td>
+        <td>${t.priority==='urgent'?'<span class="badge badge-red">紧急</span>':priMap[t.priority]||'普通'}</td>
+        <td><span class="badge ${statusCls[t.status]||'badge-gray'}">${statusMap[t.status]||t.status}</span></td>
+        <td>${t.assigned_to||'—'}</td>
+        <td style="font-size:12px;color:var(--text3)">${fmtDate(t.created_at)}</td>
+        <td>
+          ${t.status==='open' ? `
+            <button class="btn btn-outline btn-xs" onclick="transferTicket('${t.id}')">转人工</button>
+            <button class="btn btn-success btn-xs" onclick="resolveTicket('${t.id}')">解决</button>
+          ` : t.status==='processing' ? `
+            <button class="btn btn-success btn-xs" onclick="resolveTicket('${t.id}')">解决</button>
+          ` : '<span style="color:var(--text3);font-size:12px">—</span>'}
+        </td>
+      </tr>`).join('')}</tbody>
+    </table></div></div></div>
+  `;
+}
+
+async function transferTicket(id) {
+  const data = await api(`/tickets/${id}/transfer`, { method: 'POST', body: JSON.stringify({ assignedTo: '人工客服专员' }) });
+  if (data?.success) { toast('已转接人工', 'success'); loadTickets(); }
+  else toast(data?.error || '转接失败', 'error');
+}
+
+async function resolveTicket(id) {
+  const data = await api(`/tickets/${id}`, { method: 'PUT', body: JSON.stringify({ status: 'resolved' }) });
+  if (data?.success) { toast('工单已解决', 'success'); loadTickets(); }
+  else toast(data?.error || '操作失败', 'error');
+}
+</script>
+</body>
+</html>

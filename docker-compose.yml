@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  edu-chatbot:
+    build: .
+    container_name: edu-chatbot
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - NODE_ENV=production
+      - DB_PATH=/app/data/edu_chatbot.db
+      - LLM_API_KEY=${LLM_API_KEY:-demo_mode}
+      - LLM_API_URL=${LLM_API_URL:-https://api.openai.com/v1/chat/completions}
+      - LLM_MODEL=${LLM_MODEL:-gpt-3.5-turbo}
+      - ADMIN_TOKEN=${ADMIN_TOKEN:-admin_token_2024}
+    volumes:
+      - chatbot-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  chatbot-data:

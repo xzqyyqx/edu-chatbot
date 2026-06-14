@@ -1,0 +1,2095 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>启慧教育 · AI智能客服</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <style>
+    /* ===== CSS变量 ===== */
+    :root {
+      --primary: #6366f1;
+      --primary-light: #818cf8;
+      --primary-dark: #4f46e5;
+      --secondary: #f59e0b;
+      --success: #10b981;
+      --danger: #ef4444;
+      --bg: #f8fafc;
+      --bg-card: #ffffff;
+      --bg-sidebar: #1e1b4b;
+      --text-primary: #1e293b;
+      --text-secondary: #64748b;
+      --text-light: #94a3b8;
+      --border: #e2e8f0;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+      --shadow-md: 0 4px 16px rgba(0,0,0,0.1);
+      --shadow-lg: 0 8px 32px rgba(0,0,0,0.15);
+      --radius: 12px;
+      --radius-sm: 8px;
+      --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text-primary);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+    }
+
+    /* ===== 侧边栏 ===== */
+    .sidebar {
+      width: 280px;
+      background: var(--bg-sidebar);
+      display: flex;
+      flex-direction: column;
+      padding: 0;
+      flex-shrink: 0;
+      transition: transform 0.3s ease;
+    }
+
+    .sidebar-header {
+      padding: 24px 20px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    .logo-text {
+      color: white;
+    }
+
+    .logo-text h1 {
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .logo-text p {
+      font-size: 11px;
+      color: rgba(255,255,255,0.5);
+      margin-top: 2px;
+    }
+
+    /* 用户身份切换 */
+    .user-type-switch {
+      display: flex;
+      background: rgba(255,255,255,0.08);
+      border-radius: 8px;
+      padding: 4px;
+    }
+
+    .type-btn {
+      flex: 1;
+      padding: 8px 10px;
+      border: none;
+      background: transparent;
+      color: rgba(255,255,255,0.6);
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 500;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+    }
+
+    .type-btn.active {
+      background: var(--primary);
+      color: white;
+      box-shadow: 0 2px 8px rgba(99,102,241,0.4);
+    }
+
+    .sidebar-nav {
+      padding: 16px 12px;
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .nav-section-title {
+      font-size: 10px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.3);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      padding: 12px 8px 6px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      color: rgba(255,255,255,0.65);
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.2s;
+      margin-bottom: 2px;
+    }
+
+    .nav-item:hover {
+      background: rgba(255,255,255,0.08);
+      color: white;
+    }
+
+    .nav-item.active {
+      background: rgba(99,102,241,0.3);
+      color: white;
+    }
+
+    .nav-item .icon { font-size: 15px; }
+
+    .sidebar-stats {
+      padding: 16px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .stat-item {
+      background: rgba(255,255,255,0.06);
+      border-radius: 8px;
+      padding: 10px;
+      text-align: center;
+    }
+
+    .stat-num {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--primary-light);
+    }
+
+    .stat-label {
+      font-size: 10px;
+      color: rgba(255,255,255,0.4);
+      margin-top: 2px;
+    }
+
+    /* ===== 主内容区 ===== */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      min-width: 0;
+    }
+
+    /* 页面视图 */
+    .page {
+      display: none;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    .page.active {
+      display: flex;
+    }
+
+    /* ===== 聊天页面 ===== */
+    .chat-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 24px;
+      background: white;
+      border-bottom: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
+      flex-shrink: 0;
+    }
+
+    .agent-avatar {
+      width: 44px;
+      height: 44px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      color: white;
+      flex-shrink: 0;
+    }
+
+    .agent-info h2 {
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .agent-info p {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+
+    .online-dot {
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      background: var(--success);
+      border-radius: 50%;
+      margin-right: 4px;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .header-actions {
+      margin-left: auto;
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-icon {
+      width: 36px;
+      height: 36px;
+      border: 1px solid var(--border);
+      background: white;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      transition: all 0.2s;
+    }
+
+    .btn-icon:hover {
+      background: var(--bg);
+      border-color: var(--primary);
+    }
+
+    /* 聊天消息区域 */
+    .chat-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      background: var(--bg);
+    }
+
+    .chat-body::-webkit-scrollbar { width: 4px; }
+    .chat-body::-webkit-scrollbar-track { background: transparent; }
+    .chat-body::-webkit-scrollbar-thumb { background: #ddd; border-radius: 2px; }
+
+    /* 消息气泡 */
+    .message {
+      display: flex;
+      gap: 10px;
+      max-width: 85%;
+      animation: fadeInUp 0.3s ease;
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .message.user {
+      align-self: flex-end;
+      flex-direction: row-reverse;
+    }
+
+    .message.assistant, .message.system {
+      align-self: flex-start;
+    }
+
+    .msg-avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+      align-self: flex-end;
+    }
+
+    .msg-avatar.ai {
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      color: white;
+    }
+
+    .msg-avatar.user {
+      background: linear-gradient(135deg, var(--secondary), #f97316);
+      color: white;
+    }
+
+    .msg-bubble {
+      padding: 12px 16px;
+      border-radius: 16px;
+      font-size: 14px;
+      line-height: 1.6;
+      max-width: 100%;
+      word-break: break-word;
+    }
+
+    .message.user .msg-bubble {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+      border-bottom-right-radius: 4px;
+    }
+
+    .message.assistant .msg-bubble {
+      background: white;
+      color: var(--text-primary);
+      border-bottom-left-radius: 4px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .message.system .msg-bubble {
+      background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+      color: #166534;
+      border: 1px solid #bbf7d0;
+      border-radius: 10px;
+      font-size: 13px;
+    }
+
+    .msg-time {
+      font-size: 10px;
+      color: var(--text-light);
+      margin-top: 4px;
+      text-align: right;
+    }
+
+    .message.assistant .msg-time { text-align: left; }
+
+    /* Markdown渲染 */
+    .msg-bubble strong { font-weight: 700; }
+    .msg-bubble em { font-style: italic; }
+    .msg-bubble p { margin-bottom: 8px; }
+    .msg-bubble p:last-child { margin-bottom: 0; }
+    .msg-bubble ul, .msg-bubble ol {
+      padding-left: 20px;
+      margin: 6px 0;
+    }
+    .msg-bubble li { margin-bottom: 4px; }
+    .msg-bubble h1, .msg-bubble h2, .msg-bubble h3 {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .msg-bubble hr {
+      border: none;
+      border-top: 1px solid rgba(0,0,0,0.1);
+      margin: 8px 0;
+    }
+
+    /* 打字动画 */
+    .typing-indicator {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+      padding: 14px 18px;
+      background: white;
+      border-radius: 16px;
+      border-bottom-left-radius: 4px;
+      box-shadow: var(--shadow-sm);
+      width: fit-content;
+    }
+
+    .typing-dot {
+      width: 7px;
+      height: 7px;
+      background: var(--primary-light);
+      border-radius: 50%;
+      animation: typing 1.2s infinite;
+    }
+
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes typing {
+      0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+      30% { transform: translateY(-6px); opacity: 1; }
+    }
+
+    /* 课程卡片区域 */
+    .course-cards-section {
+      margin-top: 8px;
+    }
+
+    .cards-title {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 10px;
+      font-weight: 500;
+    }
+
+    .course-cards-scroll {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      padding-bottom: 6px;
+    }
+
+    .course-cards-scroll::-webkit-scrollbar { height: 3px; }
+    .course-cards-scroll::-webkit-scrollbar-thumb { background: #ddd; border-radius: 2px; }
+
+    .course-card {
+      min-width: 220px;
+      max-width: 220px;
+      background: white;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: var(--shadow-sm);
+      flex-shrink: 0;
+    }
+
+    .course-card:hover {
+      border-color: var(--primary);
+      box-shadow: 0 4px 16px rgba(99,102,241,0.15);
+      transform: translateY(-2px);
+    }
+
+    .card-header {
+      padding: 14px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+    }
+
+    .card-emoji { font-size: 28px; margin-bottom: 6px; }
+
+    .card-name {
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .card-duration {
+      font-size: 11px;
+      opacity: 0.8;
+      margin-top: 3px;
+    }
+
+    .card-body { padding: 12px 14px; }
+
+    .card-desc {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      margin-bottom: 10px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .card-classes {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .card-class-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 8px;
+      background: var(--bg);
+      border-radius: 6px;
+    }
+
+    .class-name {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .class-price {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .class-original {
+      font-size: 10px;
+      color: var(--text-light);
+      text-decoration: line-through;
+    }
+
+    .card-action-btn {
+      width: 100%;
+      margin-top: 10px;
+      padding: 8px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .card-action-btn:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+
+    /* 快捷操作按钮 */
+    .quick-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 12px 24px 0;
+    }
+
+    .quick-btn {
+      padding: 6px 12px;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .quick-btn:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+      background: rgba(99,102,241,0.05);
+    }
+
+    /* 输入区域 */
+    .chat-footer {
+      padding: 16px 24px;
+      background: white;
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .input-container {
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: 14px;
+      padding: 10px 14px;
+      transition: border-color 0.2s;
+    }
+
+    .input-container:focus-within {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+    }
+
+    .chat-input {
+      flex: 1;
+      border: none;
+      background: transparent;
+      font-size: 14px;
+      color: var(--text-primary);
+      resize: none;
+      outline: none;
+      font-family: var(--font);
+      line-height: 1.5;
+      max-height: 120px;
+      min-height: 24px;
+    }
+
+    .chat-input::placeholder { color: var(--text-light); }
+
+    .send-btn {
+      width: 36px;
+      height: 36px;
+      background: var(--primary);
+      border: none;
+      border-radius: 8px;
+      color: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+
+    .send-btn:hover { background: var(--primary-dark); }
+    .send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* 工单按钮 */
+    .ticket-suggest {
+      margin-top: 8px;
+      padding: 10px 14px;
+      background: linear-gradient(135deg, #fff7ed, #fef3c7);
+      border: 1px solid #fde68a;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      animation: fadeInUp 0.3s ease;
+    }
+
+    .ticket-suggest span { font-size: 13px; color: #92400e; flex: 1; }
+
+    .ticket-btn {
+      padding: 6px 14px;
+      background: var(--secondary);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+
+    .ticket-btn:hover { background: #d97706; }
+
+    /* ===== 知识库页面 ===== */
+    .page-header {
+      padding: 24px 32px 16px;
+      background: white;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .page-header h2 {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .page-header p {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .page-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 32px;
+    }
+
+    .kb-tabs {
+      display: flex;
+      gap: 4px;
+      background: var(--bg);
+      border-radius: 10px;
+      padding: 4px;
+      margin-bottom: 24px;
+      width: fit-content;
+    }
+
+    .kb-tab {
+      padding: 8px 20px;
+      border: none;
+      background: transparent;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      transition: all 0.2s;
+    }
+
+    .kb-tab.active {
+      background: white;
+      color: var(--primary);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .kb-section { display: none; }
+    .kb-section.active { display: block; }
+
+    .course-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+    }
+
+    .course-kb-card {
+      background: white;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      overflow: hidden;
+      transition: all 0.2s;
+    }
+
+    .course-kb-card:hover {
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+    }
+
+    .course-kb-header {
+      padding: 16px 20px;
+      background: linear-gradient(135deg, var(--bg-sidebar), #312e81);
+      color: white;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .course-kb-emoji { font-size: 32px; }
+
+    .course-kb-title { font-size: 15px; font-weight: 700; }
+    .course-kb-sub { font-size: 12px; opacity: 0.7; margin-top: 3px; }
+
+    .course-kb-body { padding: 16px 20px; }
+
+    .course-kb-desc {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      margin-bottom: 12px;
+    }
+
+    .highlights-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .highlight-tag {
+      padding: 3px 10px;
+      background: rgba(99,102,241,0.08);
+      color: var(--primary);
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .class-list { display: flex; flex-direction: column; gap: 8px; }
+
+    .class-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: var(--bg);
+      border-radius: 8px;
+      border-left: 3px solid var(--primary);
+    }
+
+    .class-row-name { font-size: 13px; font-weight: 600; }
+    .class-row-price { font-size: 15px; font-weight: 700; color: var(--primary); }
+    .class-row-original { font-size: 11px; color: var(--text-light); text-decoration: line-through; }
+
+    /* 故障知识库 */
+    .issue-list { display: flex; flex-direction: column; gap: 12px; }
+
+    .issue-card {
+      background: white;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+
+    .issue-header {
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .issue-header:hover { background: var(--bg); }
+
+    .issue-category {
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .cat-login { background: #eff6ff; color: #1d4ed8; }
+    .cat-software { background: #f0fdf4; color: #166534; }
+    .cat-network { background: #fff7ed; color: #9a3412; }
+    .cat-hardware { background: #fdf4ff; color: #7e22ce; }
+    .cat-other { background: #f8fafc; color: #475569; }
+
+    .issue-title { font-size: 14px; font-weight: 600; flex: 1; }
+    .issue-toggle { font-size: 12px; color: var(--text-light); }
+
+    .issue-body {
+      padding: 0 18px;
+      max-height: 0;
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .issue-body.open {
+      max-height: 400px;
+      padding: 0 18px 16px;
+    }
+
+    .issue-solution {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.8;
+      white-space: pre-line;
+    }
+
+    /* 退费政策 */
+    .policy-list { display: flex; flex-direction: column; gap: 12px; }
+
+    .policy-card {
+      background: white;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      padding: 18px 20px;
+      display: flex;
+      gap: 16px;
+    }
+
+    .policy-num {
+      width: 32px;
+      height: 32px;
+      background: var(--primary);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .policy-num.danger { background: var(--danger); }
+
+    .policy-content { flex: 1; }
+
+    .policy-title { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+
+    .policy-condition {
+      font-size: 12px;
+      color: var(--primary);
+      background: rgba(99,102,241,0.08);
+      padding: 3px 10px;
+      border-radius: 20px;
+      display: inline-block;
+      margin-bottom: 8px;
+    }
+
+    .policy-text {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.7;
+      white-space: pre-line;
+    }
+
+    .policy-days {
+      font-size: 12px;
+      color: var(--success);
+      font-weight: 600;
+      margin-top: 6px;
+    }
+
+    /* ===== 工单页面 ===== */
+    .tickets-content {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .tickets-filter {
+      padding: 16px 32px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      gap: 8px;
+      background: white;
+      flex-shrink: 0;
+    }
+
+    .filter-btn {
+      padding: 6px 14px;
+      border: 1.5px solid var(--border);
+      background: white;
+      border-radius: 20px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-weight: 500;
+    }
+
+    .filter-btn.active {
+      border-color: var(--primary);
+      background: rgba(99,102,241,0.08);
+      color: var(--primary);
+    }
+
+    .tickets-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .ticket-item {
+      background: white;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      padding: 16px 18px;
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      transition: all 0.2s;
+    }
+
+    .ticket-item:hover {
+      box-shadow: var(--shadow-md);
+      border-color: var(--primary-light);
+    }
+
+    .ticket-type-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .ti-refund { background: #fff7ed; }
+    .ti-device { background: #f0fdf4; }
+    .ti-complaint { background: #fdf4ff; }
+    .ti-other { background: #f8fafc; }
+
+    .ticket-info { flex: 1; }
+
+    .ticket-title-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 4px;
+    }
+
+    .ticket-title { font-size: 14px; font-weight: 600; }
+
+    .ticket-status {
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .ts-open { background: #fff7ed; color: #c2410c; }
+    .ts-processing { background: #eff6ff; color: #1d4ed8; }
+    .ts-resolved { background: #f0fdf4; color: #166534; }
+    .ts-closed { background: #f8fafc; color: #475569; }
+
+    .ticket-desc {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+    }
+
+    .ticket-meta {
+      font-size: 11px;
+      color: var(--text-light);
+    }
+
+    .ticket-actions {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .btn-sm {
+      padding: 5px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      border: 1px solid;
+      transition: all 0.2s;
+    }
+
+    .btn-primary-sm {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    .btn-primary-sm:hover { background: var(--primary-dark); }
+
+    .btn-outline-sm {
+      background: white;
+      color: var(--text-secondary);
+      border-color: var(--border);
+    }
+
+    .btn-outline-sm:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    /* ===== 模态框 ===== */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      backdrop-filter: blur(4px);
+    }
+
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+      background: white;
+      border-radius: 16px;
+      padding: 28px;
+      width: 480px;
+      max-width: 90vw;
+      animation: modalIn 0.25s ease;
+    }
+
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(0.95) translateY(-10px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .modal h3 { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+    .modal p { font-size: 13px; color: var(--text-secondary); margin-bottom: 20px; }
+
+    .form-group { margin-bottom: 16px; }
+
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: var(--font);
+      outline: none;
+      transition: border-color 0.2s;
+      color: var(--text-primary);
+    }
+
+    .form-control:focus { border-color: var(--primary); }
+
+    select.form-control { cursor: pointer; }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 20px;
+    }
+
+    .btn-primary {
+      padding: 10px 24px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-primary:hover { background: var(--primary-dark); }
+
+    .btn-ghost {
+      padding: 10px 20px;
+      background: transparent;
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-ghost:hover { border-color: var(--text-secondary); }
+
+    /* ===== Toast通知 ===== */
+    .toast-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .toast {
+      padding: 12px 18px;
+      background: white;
+      border-radius: 10px;
+      box-shadow: var(--shadow-lg);
+      font-size: 13px;
+      font-weight: 500;
+      border-left: 4px solid var(--primary);
+      animation: slideIn 0.3s ease;
+      min-width: 220px;
+    }
+
+    .toast.success { border-left-color: var(--success); }
+    .toast.error { border-left-color: var(--danger); }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(20px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    /* ===== 响应式 ===== */
+    @media (max-width: 768px) {
+      .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        z-index: 100;
+        transform: translateX(-100%);
+      }
+
+      .sidebar.open { transform: translateX(0); }
+
+      .mobile-menu-btn {
+        display: flex !important;
+      }
+
+      .chat-body { padding: 16px; }
+      .chat-footer { padding: 12px 16px; }
+      .message { max-width: 90%; }
+    }
+
+    .mobile-menu-btn {
+      display: none;
+      width: 36px;
+      height: 36px;
+      border: 1px solid var(--border);
+      background: white;
+      border-radius: 8px;
+      cursor: pointer;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    /* 空状态 */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 20px;
+      color: var(--text-light);
+    }
+
+    .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+    .empty-state p { font-size: 14px; }
+
+    /* 加载状态 */
+    .loading { opacity: 0.6; pointer-events: none; }
+
+    /* 移动端遮罩 */
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 99;
+    }
+
+    @media (max-width: 768px) {
+      .sidebar.open ~ .sidebar-overlay { display: block; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- 侧边栏 -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div class="logo">
+      <div class="logo-icon">🎓</div>
+      <div class="logo-text">
+        <h1>启慧教育</h1>
+        <p>AI智能客服系统</p>
+      </div>
+    </div>
+    <div class="user-type-switch">
+      <button class="type-btn active" onclick="switchUserType('prospect')">
+        🌟 意向学员
+      </button>
+      <button class="type-btn" onclick="switchUserType('enrolled')">
+        📚 在读学员
+      </button>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-section-title">主要功能</div>
+    <div class="nav-item active" onclick="showPage('chat')">
+      <span class="icon">💬</span> 智能对话
+    </div>
+    <div class="nav-item" onclick="showPage('knowledge')">
+      <span class="icon">📖</span> 课程知识库
+    </div>
+    <div class="nav-item" onclick="showPage('tickets')">
+      <span class="icon">🎫</span> 工单管理
+    </div>
+
+    <div class="nav-section-title">快捷问题</div>
+    <div class="nav-item" onclick="quickQuestion('我想了解Java课程')">
+      <span class="icon">☕</span> Java课程咨询
+    </div>
+    <div class="nav-item" onclick="quickQuestion('Python AI方向怎么样')">
+      <span class="icon">🤖</span> AI方向咨询
+    </div>
+    <div class="nav-item" onclick="quickQuestion('退费政策是什么')">
+      <span class="icon">💰</span> 退费政策
+    </div>
+    <div class="nav-item" onclick="quickQuestion('视频无法播放怎么办')">
+      <span class="icon">🔧</span> 技术故障
+    </div>
+  </nav>
+
+  <div class="sidebar-stats">
+    <div class="stats-grid">
+      <div class="stat-item">
+        <div class="stat-num" id="stat-sessions">0</div>
+        <div class="stat-label">会话数</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num" id="stat-tickets">0</div>
+        <div class="stat-label">工单数</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<div class="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<!-- 主内容 -->
+<main class="main">
+
+  <!-- 聊天页面 -->
+  <div class="page active" id="page-chat">
+    <div class="chat-header">
+      <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
+      <div class="agent-avatar">🤖</div>
+      <div class="agent-info">
+        <h2>小慧 · AI客服顾问</h2>
+        <p><span class="online-dot"></span>
+          <span id="agent-mode-label">招生顾问模式</span> · 在线服务中</p>
+      </div>
+      <div class="header-actions">
+        <button class="btn-icon" onclick="clearChat()" title="清空对话">🗑️</button>
+        <button class="btn-icon" onclick="openTicketModal()" title="创建工单">🎫</button>
+        <button class="btn-icon" onclick="archiveSession()" title="归档会话">📁</button>
+      </div>
+    </div>
+
+    <div class="chat-body" id="chatBody"></div>
+
+    <div class="quick-actions" id="quickActions">
+      <button class="quick-btn" onclick="quickQuestion('热门课程有哪些')">🔥 热门课程</button>
+      <button class="quick-btn" onclick="quickQuestion('就业保障是怎么回事')">💼 就业保障</button>
+      <button class="quick-btn" onclick="quickQuestion('课程价格多少')">💰 课程价格</button>
+      <button class="quick-btn" onclick="quickQuestion('学习时间怎么安排')">⏰ 学习安排</button>
+      <button class="quick-btn" onclick="quickQuestion('零基础能学吗')">🌱 零基础入学</button>
+    </div>
+
+    <div class="chat-footer">
+      <div id="ticketSuggest"></div>
+      <div class="input-container">
+        <textarea
+          class="chat-input"
+          id="chatInput"
+          placeholder="输入消息，Enter发送，Shift+Enter换行..."
+          rows="1"
+        ></textarea>
+        <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 知识库页面 -->
+  <div class="page" id="page-knowledge">
+    <div class="page-header">
+      <h2>📖 课程知识库</h2>
+      <p>完整的课程信息、技术故障解决方案和退费政策查询</p>
+    </div>
+    <div class="page-content">
+      <div class="kb-tabs">
+        <button class="kb-tab active" onclick="switchKbTab('courses')">🎓 课程与班型</button>
+        <button class="kb-tab" onclick="switchKbTab('issues')">🔧 故障解决</button>
+        <button class="kb-tab" onclick="switchKbTab('refund')">💰 退费政策</button>
+      </div>
+
+      <div class="kb-section active" id="kb-courses">
+        <div class="course-grid" id="courseGrid">
+          <div class="empty-state"><div class="icon">⏳</div><p>加载中...</p></div>
+        </div>
+      </div>
+
+      <div class="kb-section" id="kb-issues">
+        <div class="issue-list" id="issueList">
+          <div class="empty-state"><div class="icon">⏳</div><p>加载中...</p></div>
+        </div>
+      </div>
+
+      <div class="kb-section" id="kb-refund">
+        <div class="policy-list" id="policyList">
+          <div class="empty-state"><div class="icon">⏳</div><p>加载中...</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 工单页面 -->
+  <div class="page" id="page-tickets">
+    <div class="page-header">
+      <h2>🎫 工单管理</h2>
+      <p>查看和处理学员提交的问题工单</p>
+    </div>
+    <div class="tickets-content">
+      <div class="tickets-filter">
+        <button class="filter-btn active" onclick="filterTickets('all')">全部</button>
+        <button class="filter-btn" onclick="filterTickets('open')">待处理</button>
+        <button class="filter-btn" onclick="filterTickets('processing')">处理中</button>
+        <button class="filter-btn" onclick="filterTickets('resolved')">已解决</button>
+      </div>
+      <div class="tickets-list" id="ticketsList">
+        <div class="empty-state"><div class="icon">⏳</div><p>加载中...</p></div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- 工单模态框 -->
+<div class="modal-overlay" id="ticketModal">
+  <div class="modal">
+    <h3>🎫 创建工单</h3>
+    <p>提交问题工单，专属团队将优先处理您的问题</p>
+
+    <div class="form-group">
+      <label class="form-label">问题类型</label>
+      <select class="form-control" id="ticketType">
+        <option value="refund">💰 退费申请</option>
+        <option value="device">🔧 技术故障</option>
+        <option value="complaint">📢 投诉建议</option>
+        <option value="other">📌 其他问题</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">问题标题</label>
+      <input class="form-control" id="ticketTitle" type="text" placeholder="简要描述您的问题...">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">详细描述</label>
+      <textarea class="form-control" id="ticketDesc" rows="4" placeholder="请详细描述您遇到的问题，方便我们快速处理..."></textarea>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">优先级</label>
+      <select class="form-control" id="ticketPriority">
+        <option value="normal">普通</option>
+        <option value="high">高优先级</option>
+        <option value="urgent">紧急</option>
+      </select>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeModal('ticketModal')">取消</button>
+      <button class="btn-primary" onclick="submitTicket()">提交工单</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast容器 -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+// ===== 配置 =====
+const API_BASE = 'http://localhost:3001/api';
+let currentSessionId = null;
+let currentUserType = 'prospect';
+let isLoading = false;
+let ticketSuggestData = null;
+
+// ===== 初始化 =====
+async function init() {
+  await createSession();
+  loadStats();
+  loadKnowledgeBase();
+  loadTickets();
+}
+
+// ===== 会话管理 =====
+async function createSession(userType) {
+  currentUserType = userType || currentUserType;
+  try {
+    const res = await fetch(`${API_BASE}/chat/sessions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userType: currentUserType })
+    });
+    const data = await res.json();
+    if (data.success) {
+      currentSessionId = data.sessionId;
+      clearMessages();
+      addMessage('assistant', data.welcomeMessage);
+    }
+  } catch (e) {
+    // 离线模式
+    currentSessionId = 'offline-' + Date.now();
+    clearMessages();
+    addMessage('assistant', currentUserType === 'enrolled'
+      ? '您好！我是学员服务助手小慧 🎓 很高兴为您服务！（当前为演示模式）'
+      : '您好！我是启慧教育顾问小慧 👋 请问有什么想了解的吗？（当前为演示模式）'
+    );
+  }
+}
+
+// ===== 用户类型切换 =====
+async function switchUserType(type) {
+  currentUserType = type;
+  document.querySelectorAll('.type-btn').forEach((btn, i) => {
+    btn.classList.toggle('active', (i === 0 && type === 'prospect') || (i === 1 && type === 'enrolled'));
+  });
+
+  const label = document.getElementById('agent-mode-label');
+  if (type === 'enrolled') {
+    label.textContent = '售后服务模式';
+    document.getElementById('quickActions').innerHTML = `
+      <button class="quick-btn" onclick="quickQuestion('视频无法播放怎么办')">🎬 视频故障</button>
+      <button class="quick-btn" onclick="quickQuestion('无法登录账号')">🔑 登录问题</button>
+      <button class="quick-btn" onclick="quickQuestion('直播课无法进入')">📡 直播问题</button>
+      <button class="quick-btn" onclick="quickQuestion('我想了解退费政策')">💰 退费政策</button>
+      <button class="quick-btn" onclick="quickQuestion('我要投诉')">📢 我要投诉</button>
+    `;
+  } else {
+    label.textContent = '招生顾问模式';
+    document.getElementById('quickActions').innerHTML = `
+      <button class="quick-btn" onclick="quickQuestion('热门课程有哪些')">🔥 热门课程</button>
+      <button class="quick-btn" onclick="quickQuestion('就业保障是怎么回事')">💼 就业保障</button>
+      <button class="quick-btn" onclick="quickQuestion('课程价格多少')">💰 课程价格</button>
+      <button class="quick-btn" onclick="quickQuestion('学习时间怎么安排')">⏰ 学习安排</button>
+      <button class="quick-btn" onclick="quickQuestion('零基础能学吗')">🌱 零基础入学</button>
+    `;
+  }
+
+  showToast(`已切换至${type === 'enrolled' ? '在读学员' : '意向学员'}模式`, 'success');
+  await createSession(type);
+}
+
+// ===== 消息处理 =====
+async function sendMessage() {
+  const input = document.getElementById('chatInput');
+  const content = input.value.trim();
+  if (!content || isLoading) return;
+
+  input.value = '';
+  autoResize(input);
+  addMessage('user', content);
+  document.getElementById('ticketSuggest').innerHTML = '';
+  ticketSuggestData = null;
+
+  showTyping();
+  isLoading = true;
+  document.getElementById('sendBtn').disabled = true;
+
+  try {
+    const res = await fetch(`${API_BASE}/chat/sessions/${currentSessionId}/messages`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content, userType: currentUserType })
+    });
+
+    const data = await res.json();
+    hideTyping();
+
+    if (data.success) {
+      addMessage('assistant', data.message.content);
+      // 推送课程卡片
+      if (data.courseCards && data.courseCards.length > 0) {
+        renderCourseCards(data.courseCards);
+      }
+      // 工单建议
+      if (data.needTicket && data.needTicket.suggest) {
+        ticketSuggestData = data.needTicket;
+        showTicketSuggest(data.needTicket);
+      }
+    } else {
+      addMessage('system', '⚠️ 消息发送失败，请重试');
+    }
+  } catch (e) {
+    hideTyping();
+    // 离线演示模式
+    const demoReply = getDemoReply(content);
+    addMessage('assistant', demoReply.text);
+    if (demoReply.cards) renderCourseCards(demoReply.cards);
+  }
+
+  isLoading = false;
+  document.getElementById('sendBtn').disabled = false;
+}
+
+function quickQuestion(text) {
+  document.getElementById('chatInput').value = text;
+  sendMessage();
+  if (window.innerWidth <= 768) closeSidebar();
+}
+
+// ===== 消息渲染 =====
+function addMessage(role, content, isSystem = false) {
+  const chatBody = document.getElementById('chatBody');
+
+  const wrapper = document.createElement('div');
+  wrapper.className = `message ${role}`;
+
+  const avatarDiv = document.createElement('div');
+  avatarDiv.className = `msg-avatar ${role === 'user' ? 'user' : 'ai'}`;
+  avatarDiv.textContent = role === 'user' ? '👤' : '🤖';
+
+  const bubble = document.createElement('div');
+  bubble.className = 'msg-bubble';
+  bubble.innerHTML = parseMarkdown(content);
+
+  const timeDiv = document.createElement('div');
+  timeDiv.className = 'msg-time';
+  timeDiv.textContent = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+
+  const contentDiv = document.createElement('div');
+  contentDiv.appendChild(bubble);
+  contentDiv.appendChild(timeDiv);
+
+  if (role === 'user') {
+    wrapper.appendChild(contentDiv);
+    wrapper.appendChild(avatarDiv);
+  } else {
+    wrapper.appendChild(avatarDiv);
+    wrapper.appendChild(contentDiv);
+  }
+
+  chatBody.appendChild(wrapper);
+  chatBody.scrollTop = chatBody.scrollHeight;
+}
+
+function parseMarkdown(text) {
+  return text
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/\n/g, '<br>')
+    .replace(/#{1,3}\s(.+)/g, '<strong>$1</strong>')
+    .replace(/^\d+\.\s/gm, (m) => `${m}`)
+    .replace(/^[•·]\s/gm, '• ');
+}
+
+function showTyping() {
+  const chatBody = document.getElementById('chatBody');
+  const typing = document.createElement('div');
+  typing.id = 'typingIndicator';
+  typing.className = 'message assistant';
+  typing.innerHTML = `
+    <div class="msg-avatar ai">🤖</div>
+    <div class="typing-indicator">
+      <div class="typing-dot"></div>
+      <div class="typing-dot"></div>
+      <div class="typing-dot"></div>
+    </div>
+  `;
+  chatBody.appendChild(typing);
+  chatBody.scrollTop = chatBody.scrollHeight;
+}
+
+function hideTyping() {
+  const t = document.getElementById('typingIndicator');
+  if (t) t.remove();
+}
+
+function clearMessages() {
+  document.getElementById('chatBody').innerHTML = '';
+}
+
+// ===== 课程卡片渲染 =====
+function renderCourseCards(cards) {
+  const chatBody = document.getElementById('chatBody');
+  const section = document.createElement('div');
+  section.className = 'course-cards-section message assistant';
+  section.style.maxWidth = '100%';
+  section.style.width = '100%';
+
+  const content = document.createElement('div');
+  content.style.width = '100%';
+
+  const title = document.createElement('div');
+  title.className = 'cards-title';
+  title.textContent = `📋 为您推荐 ${cards.length} 个相关课程：`;
+  content.appendChild(title);
+
+  const scroll = document.createElement('div');
+  scroll.className = 'course-cards-scroll';
+
+  cards.forEach(card => {
+    const cardEl = document.createElement('div');
+    cardEl.className = 'course-card';
+    cardEl.innerHTML = `
+      <div class="card-header">
+        <div class="card-emoji">${card.emoji || '📚'}</div>
+        <div class="card-name">${card.name}</div>
+        <div class="card-duration">⏱ ${card.duration}</div>
+      </div>
+      <div class="card-body">
+        <div class="card-desc">${card.description}</div>
+        <div class="card-classes">
+          ${(card.classes || []).map(c => `
+            <div class="card-class-item">
+              <span class="class-name">${c.name}</span>
+              <div>
+                <div class="class-price">¥${c.price?.toLocaleString()}</div>
+                ${c.originalPrice ? `<div class="class-original">¥${c.originalPrice?.toLocaleString()}</div>` : ''}
+              </div>
+            </div>
+          `).join('')}
+        </div>
+        <button class="card-action-btn" onclick="quickQuestion('我想了解更多关于${card.name}的信息')">
+          了解详情 →
+        </button>
+      </div>
+    `;
+    scroll.appendChild(cardEl);
+  });
+
+  content.appendChild(scroll);
+  section.appendChild(content);
+  chatBody.appendChild(section);
+  chatBody.scrollTop = chatBody.scrollHeight;
+}
+
+// ===== 工单建议 =====
+function showTicketSuggest(data) {
+  const container = document.getElementById('ticketSuggest');
+  container.innerHTML = `
+    <div class="ticket-suggest">
+      <span>💡 ${data.reason}，是否需要创建工单由专员跟进？</span>
+      <button class="ticket-btn" onclick="openTicketModal('${data.type}')">立即创建</button>
+      <button style="background:none;border:none;cursor:pointer;color:#999;font-size:16px" onclick="this.parentElement.remove()">✕</button>
+    </div>
+  `;
+}
+
+// ===== 工单功能 =====
+function openTicketModal(type) {
+  if (type) document.getElementById('ticketType').value = type;
+  document.getElementById('ticketModal').classList.add('open');
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+async function submitTicket() {
+  const type = document.getElementById('ticketType').value;
+  const title = document.getElementById('ticketTitle').value.trim();
+  const desc = document.getElementById('ticketDesc').value.trim();
+  const priority = document.getElementById('ticketPriority').value;
+
+  if (!title) { showToast('请输入问题标题', 'error'); return; }
+
+  try {
+    const res = await fetch(`${API_BASE}/tickets`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionId: currentSessionId, type, title, description: desc, priority })
+    });
+
+    const data = await res.json();
+    if (data.success) {
+      closeModal('ticketModal');
+      showToast(`工单已创建！编号：${data.ticketId.slice(0, 8).toUpperCase()}`, 'success');
+      addMessage('system', `✅ **工单已创建成功**\n\n工单编号：${data.ticketId.slice(0, 8).toUpperCase()}\n类型：${title}\n\n我们的专业团队将在24小时内与您联系，请保持手机畅通 🙏`);
+      document.getElementById('ticketTitle').value = '';
+      document.getElementById('ticketDesc').value = '';
+      loadTickets();
+      loadStats();
+    } else {
+      showToast('创建失败，请重试', 'error');
+    }
+  } catch (e) {
+    // 离线模式
+    closeModal('ticketModal');
+    showToast('工单已创建（演示模式）', 'success');
+    addMessage('system', `✅ **工单已创建**（演示模式）\n\n工单编号：DEMO${Date.now().toString().slice(-6)}\n类型：${title}\n\n专员将在24小时内联系您 🙏`);
+  }
+}
+
+// ===== 会话管理 =====
+async function archiveSession() {
+  if (!currentSessionId) return;
+  try {
+    await fetch(`${API_BASE}/chat/sessions/${currentSessionId}/archive`, { method: 'PUT' });
+    showToast('会话已归档', 'success');
+  } catch (e) {
+    showToast('已归档（演示模式）', 'success');
+  }
+}
+
+function clearChat() {
+  if (confirm('确定要清空当前对话吗？')) {
+    createSession();
+  }
+}
+
+// ===== 知识库 =====
+async function loadKnowledgeBase() {
+  await Promise.all([loadCourses(), loadDeviceIssues(), loadRefundPolicies()]);
+}
+
+async function loadCourses() {
+  try {
+    const res = await fetch(`${API_BASE}/knowledge/courses`);
+    const data = await res.json();
+    if (data.success) renderCourseGrid(data.courses);
+  } catch (e) {
+    document.getElementById('courseGrid').innerHTML = '<div class="empty-state"><div class="icon">🌐</div><p>需要连接后端服务查看完整知识库</p></div>';
+  }
+}
+
+function renderCourseGrid(courses) {
+  const grid = document.getElementById('courseGrid');
+  if (!courses.length) {
+    grid.innerHTML = '<div class="empty-state"><div class="icon">📚</div><p>暂无课程数据</p></div>';
+    return;
+  }
+
+  grid.innerHTML = courses.map(c => {
+    const highlights = JSON.parse(c.highlights || '[]');
+    const classes = c.classes || [];
+    return `
+      <div class="course-kb-card">
+        <div class="course-kb-header">
+          <span class="course-kb-emoji">${c.cover_emoji || '📚'}</span>
+          <div>
+            <div class="course-kb-title">${c.name}</div>
+            <div class="course-kb-sub">⏱ ${c.duration} · ${getLevelName(c.level)}</div>
+          </div>
+        </div>
+        <div class="course-kb-body">
+          <div class="course-kb-desc">${c.description}</div>
+          <div class="highlights-list">
+            ${highlights.map(h => `<span class="highlight-tag">${h}</span>`).join('')}
+          </div>
+          <div class="class-list">
+            ${classes.map(cl => `
+              <div class="class-row">
+                <div>
+                  <div class="class-row-name">${cl.name}</div>
+                  <div style="font-size:11px;color:var(--text-secondary)">${cl.duration}</div>
+                </div>
+                <div style="text-align:right">
+                  <div class="class-row-price">¥${cl.price?.toLocaleString()}</div>
+                  ${cl.original_price ? `<div class="class-row-original">¥${cl.original_price?.toLocaleString()}</div>` : ''}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function loadDeviceIssues() {
+  try {
+    const res = await fetch(`${API_BASE}/knowledge/device-issues`);
+    const data = await res.json();
+    if (data.success) renderIssues(data.issues);
+  } catch (e) {}
+}
+
+function renderIssues(issues) {
+  const list = document.getElementById('issueList');
+  if (!issues.length) {
+    list.innerHTML = '<div class="empty-state"><div class="icon">🔧</div><p>暂无故障数据</p></div>';
+    return;
+  }
+
+  list.innerHTML = issues.map(i => `
+    <div class="issue-card">
+      <div class="issue-header" onclick="toggleIssue(this)">
+        <span class="issue-category cat-${i.category}">${getCatName(i.category)}</span>
+        <span class="issue-title">${i.title}</span>
+        <span class="issue-toggle">▼ 展开</span>
+      </div>
+      <div class="issue-body">
+        <div class="issue-solution">${i.solution}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function toggleIssue(header) {
+  const body = header.nextElementSibling;
+  const toggle = header.querySelector('.issue-toggle');
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  toggle.textContent = isOpen ? '▼ 展开' : '▲ 收起';
+}
+
+async function loadRefundPolicies() {
+  try {
+    const res = await fetch(`${API_BASE}/knowledge/refund-policies`);
+    const data = await res.json();
+    if (data.success) renderPolicies(data.policies);
+  } catch (e) {}
+}
+
+function renderPolicies(policies) {
+  const list = document.getElementById('policyList');
+  list.innerHTML = policies.map((p, idx) => `
+    <div class="policy-card">
+      <div class="policy-num ${p.title.includes('不可') ? 'danger' : ''}">${idx + 1}</div>
+      <div class="policy-content">
+        <div class="policy-title">${p.title}</div>
+        <div class="policy-condition">${p.condition}</div>
+        <div class="policy-text">${p.policy}</div>
+        ${p.processing_days > 0 ? `<div class="policy-days">⏱ 处理周期：${p.processing_days}个工作日</div>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+function switchKbTab(tab) {
+  document.querySelectorAll('.kb-tab').forEach((t, i) => {
+    t.classList.toggle('active', ['courses', 'issues', 'refund'][i] === tab);
+  });
+  document.querySelectorAll('.kb-section').forEach(s => s.classList.remove('active'));
+  document.getElementById(`kb-${tab}`).classList.add('active');
+}
+
+// ===== 工单列表 =====
+let currentFilter = 'all';
+
+async function loadTickets() {
+  try {
+    const url = currentFilter === 'all'
+      ? `${API_BASE}/tickets`
+      : `${API_BASE}/tickets?status=${currentFilter}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data.success) renderTickets(data.tickets);
+  } catch (e) {
+    document.getElementById('ticketsList').innerHTML = '<div class="empty-state"><div class="icon">🎫</div><p>需要连接后端服务查看工单</p></div>';
+  }
+}
+
+function renderTickets(tickets) {
+  const list = document.getElementById('ticketsList');
+  if (!tickets.length) {
+    list.innerHTML = '<div class="empty-state"><div class="icon">✅</div><p>暂无工单</p></div>';
+    return;
+  }
+
+  const typeEmoji = { refund: '💰', device: '🔧', complaint: '📢', other: '📌' };
+  const typeClass = { refund: 'ti-refund', device: 'ti-device', complaint: 'ti-complaint', other: 'ti-other' };
+  const statusMap = { open: '待处理', processing: '处理中', resolved: '已解决', closed: '已关闭' };
+
+  list.innerHTML = tickets.map(t => `
+    <div class="ticket-item">
+      <div class="ticket-type-icon ${typeClass[t.type] || 'ti-other'}">${typeEmoji[t.type] || '📌'}</div>
+      <div class="ticket-info">
+        <div class="ticket-title-row">
+          <span class="ticket-title">${t.title}</span>
+          <span class="ticket-status ts-${t.status}">${statusMap[t.status] || t.status}</span>
+          ${t.priority === 'urgent' ? '<span style="background:#fef2f2;color:#dc2626;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600">🔴 紧急</span>' : ''}
+        </div>
+        <div class="ticket-desc">${t.description || '无详细描述'}</div>
+        <div class="ticket-meta">#${t.id.slice(0, 8).toUpperCase()} · ${new Date(t.created_at).toLocaleString('zh-CN')}</div>
+      </div>
+      <div class="ticket-actions">
+        ${t.status === 'open' ? `
+          <button class="btn-sm btn-primary-sm" onclick="transferTicket('${t.id}')">转人工</button>
+          <button class="btn-sm btn-outline-sm" onclick="resolveTicket('${t.id}')">标记解决</button>
+        ` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+function filterTickets(filter) {
+  currentFilter = filter;
+  document.querySelectorAll('.filter-btn').forEach((btn, i) => {
+    btn.classList.toggle('active', ['all', 'open', 'processing', 'resolved'][i] === filter);
+  });
+  loadTickets();
+}
+
+async function transferTicket(id) {
+  try {
+    await fetch(`${API_BASE}/tickets/${id}/transfer`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ assignedTo: '人工客服专员' })
+    });
+    showToast('已转接人工客服', 'success');
+    loadTickets();
+  } catch (e) {
+    showToast('已转接（演示模式）', 'success');
+  }
+}
+
+async function resolveTicket(id) {
+  try {
+    await fetch(`${API_BASE}/tickets/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'resolved' })
+    });
+    showToast('工单已标记为已解决', 'success');
+    loadTickets();
+  } catch (e) {
+    showToast('已标记（演示模式）', 'success');
+  }
+}
+
+// ===== 统计 =====
+async function loadStats() {
+  try {
+    const res = await fetch(`${API_BASE}/stats`);
+    const data = await res.json();
+    if (data.success) {
+      document.getElementById('stat-sessions').textContent = data.stats.totalSessions;
+      document.getElementById('stat-tickets').textContent = data.stats.totalTickets;
+    }
+  } catch (e) {}
+}
+
+// ===== 页面导航 =====
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+
+  document.getElementById(`page-${page}`).classList.add('active');
+  event?.currentTarget?.classList.add('active');
+
+  if (page === 'tickets') loadTickets();
+  if (window.innerWidth <= 768) closeSidebar();
+}
+
+// ===== UI工具函数 =====
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+}
+
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+}
+
+function showToast(msg, type = 'info') {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.textContent = msg;
+  container.appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
+}
+
+function getLevelName(level) {
+  return { beginner: '零基础', intermediate: '进阶', advanced: '高级' }[level] || level;
+}
+
+function getCatName(cat) {
+  return { login: '登录问题', software: '软件故障', network: '网络问题', hardware: '硬件问题', other: '其他' }[cat] || cat;
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+// ===== 离线演示回复 =====
+function getDemoReply(msg) {
+  const cards = [
+    { id: 'demo1', name: 'Java全栈开发', emoji: '☕', description: '从零基础到企业级开发', duration: '6个月',
+      classes: [{ name: '就业保障班', price: 15800, originalPrice: 19800 }] },
+    { id: 'demo2', name: 'Python AI', emoji: '🤖', description: '机器学习与大模型应用', duration: '8个月',
+      classes: [{ name: 'AI工程师班', price: 19800, originalPrice: 24800 }] }
+  ];
+
+  if (/课程|java|python|前端/.test(msg.toLowerCase())) {
+    return { text: '我来为您介绍我们的热门课程！以下是精选推荐：', cards };
+  }
+  return { text: '您好！请问有什么可以帮助您的？😊' };
+}
+
+// ===== 键盘监听 =====
+document.getElementById('chatInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+});
+
+document.getElementById('chatInput').addEventListener('input', function() {
+  autoResize(this);
+});
+
+// 点击弹窗外关闭
+document.getElementById('ticketModal').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) closeModal('ticketModal');
+});
+
+// 启动
+init();
+</script>
+</body>
+</html>

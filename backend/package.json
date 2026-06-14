@@ -1,0 +1,20 @@
+{
+  "name": "edu-chatbot-backend",
+  "version": "1.0.0",
+  "description": "职业教育AI客服系统后端",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node src/server.js",
+    "init-db": "node src/initDb.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^9.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "node-fetch": "^2.7.0",
+    "sql.js": "^1.14.1",
+    "uuid": "^9.0.0"
+  }
+}
