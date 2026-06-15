@@ -48,14 +48,26 @@ function smartSearch(message) {
   const msg = message.toLowerCase();
   const result = { courses: [], classes: [], deviceIssues: [], refundPolicies: [], suggestCards: false };
 
+  // 退费相关
   if (/退费|退款|退课|退钱/.test(msg)) {
     result.refundPolicies = getRefundPolicies();
   }
+
+  // 技术故障相关
   if (/登录|密码|视频|播放|卡顿|直播|作业|证书|下载|环境|安装|配置/.test(msg)) {
     result.deviceIssues = searchDeviceIssues(msg);
   }
-  if (/课程|班|学习|报名|价格|费用|多少钱|java|python|前端|设计|ui|产品|数据|ai|人工智能/.test(msg)) {
-    result.courses = searchCourses(msg, 3);
+
+  // 课程相关 - 宽泛匹配：只要提到课程、价格、报名等意图就返回全部课程
+  if (/课程|班|学习|报名|价格|费用|多少钱|java|python|前端|设计|ui|产品|数据|ai|人工智能|有哪些|什么课|推荐|介绍|想学|感兴趣|咨询/.test(msg)) {
+    // 如果消息包含具体课程关键词，精确搜索；否则返回全部
+    const specificKw = msg.match(/java|python|前端|设计|ui|产品|数据|ai|人工智能/);
+    if (specificKw) {
+      result.courses = searchCourses(specificKw[0], 3);
+    } else {
+      // 用户泛泛询问课程，返回全部课程概览
+      result.courses = searchCourses('', 10);
+    }
     result.suggestCards = result.courses.length > 0;
     if (result.suggestCards) {
       result.courses.forEach(c => {
